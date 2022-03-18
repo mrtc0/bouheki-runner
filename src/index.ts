@@ -125,7 +125,7 @@ interface BouhekiConfig {
 
     fs.writeFileSync(path.join(__dirname, "bouheki.service"), systemdUnitFile);
     cmd = "sudo",
-      args = ["cp", path.join(__dirname, "bouheki.service", systemdUnitFilePath)];
+      args = ["cp", path.join(__dirname, "bouheki.service"), systemdUnitFilePath];
     child_process.execFileSync(cmd, args);
     child_process.execSync("sudo systemctl daemon-reload");
 

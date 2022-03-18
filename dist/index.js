@@ -12304,7 +12304,7 @@ WantedBy=multi-user.target
         external_child_process_.execSync(`sudo chmod +x ${bouhekiPath}`);
         external_fs_.writeFileSync(external_path_.join(__dirname, "bouheki.service"), systemdUnitFile);
         cmd = "sudo",
-            args = ["cp", external_path_.join(__dirname, "bouheki.service", systemdUnitFilePath)];
+            args = ["cp", external_path_.join(__dirname, "bouheki.service"), systemdUnitFilePath];
         external_child_process_.execFileSync(cmd, args);
         external_child_process_.execSync("sudo systemctl daemon-reload");
         external_child_process_.execSync("sudo systemctl start bouheki");
