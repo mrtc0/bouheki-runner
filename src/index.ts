@@ -115,26 +115,22 @@ interface BouhekiConfig {
 
     fs.writeFileSync(bouhekiConfigPath, yaml.dump(bouhekiConfig));
 
-    if (!fs.existsSync(bouhekiPath)) {
-      const downloadPath: string = await tc.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
-      const extractPath = await tc.extractTar(downloadPath);
+    const downloadPath: string = await tc.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
+    const extractPath = await tc.extractTar(downloadPath);
 
-      let cmd = "sudo",
-        args = ["cp", path.join(extractPath, "bouheki"), bouhekiPath];
-      child_process.execFileSync(cmd, args);
-      child_process.execSync(`sudo chmod +x ${bouhekiPath}`);
-    }
+    let cmd = "sudo",
+      args = ["cp", path.join(extractPath, "bouheki"), bouhekiPath];
+    child_process.execFileSync(cmd, args);
+    child_process.execSync(`sudo chmod +x ${bouhekiPath}`);
 
-    if (!fs.existsSync(systemdUnitFilePath)) {
-      fs.writeFileSync(path.join(__dirname, "bouheki.service"), systemdUnitFile);
-      let cmd = "sudo",
-        args = ["cp", path.join(__dirname, "bouheki.service", systemdUnitFilePath)];
-      child_process.execFileSync(cmd, args);
-      child_process.execSync("sudo systemctl daemon-reload");
-    }
+    fs.writeFileSync(path.join(__dirname, "bouheki.service"), systemdUnitFile);
+    cmd = "sudo",
+      args = ["cp", path.join(__dirname, "bouheki.service", systemdUnitFilePath)];
+    child_process.execFileSync(cmd, args);
+    child_process.execSync("sudo systemctl daemon-reload");
 
     child_process.execSync("sudo systemctl start bouheki");
-  } catch (error:any) {
+  } catch (error: any) {
     core.setFailed(error.message);
   }
 })();
