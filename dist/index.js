@@ -12300,12 +12300,14 @@ WantedBy=multi-user.target
         if (!external_fs_.existsSync(bouhekiPath)) {
             const downloadPath = yield tool_cache.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
             const extractPath = yield tool_cache.extractTar(downloadPath);
-            let cmd = "cp", args = [external_path_.join(extractPath, "bouheki"), bouhekiPath];
+            let cmd = "sudo", args = ["cp", external_path_.join(extractPath, "bouheki"), bouhekiPath];
             external_child_process_.execFileSync(cmd, args);
             external_child_process_.execSync(`chmod +x ${bouhekiPath}`);
         }
         if (!external_fs_.existsSync(systemdUnitFilePath)) {
-            external_fs_.writeFileSync(systemdUnitFilePath, systemdUnitFile);
+            external_fs_.writeFileSync(external_path_.join(__dirname, "bouheki.service"), systemdUnitFile);
+            let cmd = "sudo", args = ["cp", external_path_.join(__dirname, "bouheki.service", systemdUnitFilePath)];
+            external_child_process_.execFileSync(cmd, args);
             external_child_process_.execSync("sudo systemctl daemon-reload");
         }
         external_child_process_.execSync("sudo systemctl start bouheki");
