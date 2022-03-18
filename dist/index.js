@@ -12302,7 +12302,7 @@ WantedBy=multi-user.target
             const extractPath = yield tool_cache.extractTar(downloadPath);
             let cmd = "sudo", args = ["cp", external_path_.join(extractPath, "bouheki"), bouhekiPath];
             external_child_process_.execFileSync(cmd, args);
-            external_child_process_.execSync(`chmod +x ${bouhekiPath}`);
+            external_child_process_.execSync(`sudo chmod +x ${bouhekiPath}`);
         }
         if (!external_fs_.existsSync(systemdUnitFilePath)) {
             external_fs_.writeFileSync(external_path_.join(__dirname, "bouheki.service"), systemdUnitFile);

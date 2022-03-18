@@ -122,7 +122,7 @@ interface BouhekiConfig {
       let cmd = "sudo",
         args = ["cp", path.join(extractPath, "bouheki"), bouhekiPath];
       child_process.execFileSync(cmd, args);
-      child_process.execSync(`chmod +x ${bouhekiPath}`);
+      child_process.execSync(`sudo chmod +x ${bouhekiPath}`);
     }
 
     if (!fs.existsSync(systemdUnitFilePath)) {
