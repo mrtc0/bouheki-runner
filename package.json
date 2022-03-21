@@ -6,6 +6,7 @@
   "scripts": {
     "build": "ncc build src/index.ts",
     "fmt": "prettier --write **/*.ts",
+    "style:check": "prettier --check **/*.ts",
     "test": "jest"
   },
   "keywords": [],
