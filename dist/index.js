@@ -8344,6 +8344,11 @@ var tool_cache = __nccwpck_require__(784);
 var external_path_ = __nccwpck_require__(17);
 // EXTERNAL MODULE: external "child_process"
 var external_child_process_ = __nccwpck_require__(81);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(147);
+// EXTERNAL MODULE: ./node_modules/ip6addr/ip6addr.js
+var ip6addr = __nccwpck_require__(234);
+var ip6addr_default = /*#__PURE__*/__nccwpck_require__.n(ip6addr);
 ;// CONCATENATED MODULE: ./node_modules/js-yaml/dist/js-yaml.mjs
 
 /*! js-yaml 4.1.0 https://github.com/nodeca/js-yaml @license MIT */
@@ -12197,11 +12202,60 @@ var jsYaml = {
 /* harmony default export */ const js_yaml = (jsYaml);
 
 
-// EXTERNAL MODULE: ./node_modules/ip6addr/ip6addr.js
-var ip6addr = __nccwpck_require__(234);
-var ip6addr_default = /*#__PURE__*/__nccwpck_require__.n(ip6addr);
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(147);
+;// CONCATENATED MODULE: ./src/bouheki.ts
+
+
+
+const DefaultAllowedDomains = [
+    "github.com",
+    "api.github.com",
+    "codeload.github.com",
+    "objects.github.com",
+    "objects.githubusercontent.com",
+    "objects-origin.githubusercontent.com",
+    "github-releases.githubusercontent.com",
+    "github-registry-files.githubusercontent.com"
+];
+class BouhekiConfigBuilder {
+    constructor() {
+        this.bouhekiConfig = {
+            network: {
+                mode: "block",
+                target: "container",
+                cidr: {
+                    allow: [],
+                    deny: []
+                },
+                domain: {
+                    allow: DefaultAllowedDomains,
+                    deny: []
+                }
+            },
+            files: { enable: false },
+            mount: { enable: false },
+            log: {
+                format: "json",
+                output: "/var/log/bouheki.log.json"
+            }
+        };
+    }
+    allowedAddresses(addresses) {
+        addresses.split(",").map(addr => {
+            try {
+                const cidr = ip6addr_default().createCIDR(addr).toString();
+                this.bouhekiConfig.network.cidr.allow.push(cidr);
+            }
+            catch (_a) {
+                this.bouhekiConfig.network.domain.allow = this.bouhekiConfig.network.domain.allow.concat(addr);
+            }
+        });
+        return this;
+    }
+    writeConfig(path) {
+        external_fs_.writeFileSync(path, js_yaml.dump(this.bouhekiConfig));
+    }
+}
+
 ;// CONCATENATED MODULE: ./src/index.ts
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -12218,18 +12272,6 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
-
-const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
-const DefaultAllowedDomains = [
-    "github.com",
-    "api.github.com",
-    "codeload.github.com",
-    "objects.github.com",
-    "objects.githubusercontent.com",
-    "objects-origin.githubusercontent.com",
-    "github-releases.githubusercontent.com",
-    "github-registry-files.githubusercontent.com"
-];
 const bouhekiPath = "/usr/local/bin/bouheki";
 const bouhekiConfigPath = external_path_.join(__dirname, "hardening-github-actions.yaml");
 const systemdUnitFile = `[Unit]
@@ -12246,6 +12288,7 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 `;
+const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
 (() => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (process.platform !== "linux") {
@@ -12267,36 +12310,8 @@ WantedBy=multi-user.target
         if (config.target !== "container" && config.target !== "host") {
             core.setFailed("target must be either 'container' or 'host'");
         }
-        const bouhekiConfig = {
-            network: {
-                mode: config.mode,
-                target: config.target,
-                cidr: {
-                    allow: [],
-                    deny: []
-                },
-                domain: {
-                    allow: DefaultAllowedDomains,
-                    deny: []
-                }
-            },
-            files: { enable: false },
-            mount: { enable: false },
-            log: {
-                format: "json",
-                output: "/var/log/bouheki.log.json"
-            }
-        };
-        config.allowed_endpoints.split(",").map(addr => {
-            try {
-                const cidr = ip6addr_default().createCIDR(addr).toString();
-                bouhekiConfig.network.cidr.allow.push(cidr);
-            }
-            catch (_a) {
-                bouhekiConfig.network.domain.allow.push(addr);
-            }
-        });
-        external_fs_.writeFileSync(bouhekiConfigPath, js_yaml.dump(bouhekiConfig));
+        const builder = new BouhekiConfigBuilder().allowedAddresses(config.allowed_endpoints);
+        builder.writeConfig(bouhekiConfigPath);
         const downloadPath = yield tool_cache.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
         const extractPath = yield tool_cache.extractTar(downloadPath);
         let cmd = "sudo", args = ["cp", external_path_.join(extractPath, "bouheki"), bouhekiPath];

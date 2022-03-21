@@ -2,22 +2,8 @@ import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
 import * as path from "path";
 import * as child_process from "child_process";
-import yaml from "js-yaml";
-import ip6addr from "ip6addr";
 import * as fs from "fs";
-
-const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
-
-const DefaultAllowedDomains = [
-  "github.com",
-  "api.github.com",
-  "codeload.github.com",
-  "objects.github.com",
-  "objects.githubusercontent.com",
-  "objects-origin.githubusercontent.com",
-  "github-releases.githubusercontent.com",
-  "github-registry-files.githubusercontent.com"
-];
+import { BouhekiConfigBuilder } from "./bouheki";
 
 const bouhekiPath = "/usr/local/bin/bouheki"
 const bouhekiConfigPath = path.join(__dirname, "hardening-github-actions.yaml")
@@ -36,26 +22,8 @@ RestartSec=10
 WantedBy=multi-user.target
 `
 
-interface BouhekiConfig {
-  network: {
-    mode: string,
-    target: string,
-    cidr: {
-      allow: Array<string>,
-      deny: Array<string>
-    },
-    domain: {
-      allow: Array<string>,
-      deny: Array<string>
-    }
-  },
-  files: { enable: boolean },
-  mount: { enable: boolean },
-  log: {
-    format: string,
-    output: string
-  }
-}
+const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
+
 
 (async () => {
   try {
@@ -83,37 +51,8 @@ interface BouhekiConfig {
       core.setFailed("target must be either 'container' or 'host'");
     }
 
-    const bouhekiConfig: BouhekiConfig = {
-      network: {
-        mode: config.mode,
-        target: config.target,
-        cidr: {
-          allow: [],
-          deny: []
-        },
-        domain: {
-          allow: DefaultAllowedDomains,
-          deny: []
-        }
-      },
-      files: { enable: false },
-      mount: { enable: false },
-      log: {
-        format: "json",
-        output: "/var/log/bouheki.log.json"
-      }
-    }
-
-    config.allowed_endpoints.split(",").map(addr => {
-      try {
-        const cidr: string = ip6addr.createCIDR(addr).toString();
-        bouhekiConfig.network.cidr.allow.push(cidr);
-      } catch {
-        bouhekiConfig.network.domain.allow.push(addr);
-      }
-    })
-
-    fs.writeFileSync(bouhekiConfigPath, yaml.dump(bouhekiConfig));
+    const builder = new BouhekiConfigBuilder().allowedAddresses(config.allowed_endpoints);
+    builder.writeConfig(bouhekiConfigPath);
 
     const downloadPath: string = await tc.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
     const extractPath = await tc.extractTar(downloadPath);
