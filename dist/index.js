@@ -12214,7 +12214,7 @@ const DefaultAllowedDomains = [
     "objects.githubusercontent.com",
     "objects-origin.githubusercontent.com",
     "github-releases.githubusercontent.com",
-    "github-registry-files.githubusercontent.com"
+    "github-registry-files.githubusercontent.com",
 ];
 class BouhekiConfigBuilder {
     constructor() {
@@ -12224,29 +12224,30 @@ class BouhekiConfigBuilder {
                 target: "container",
                 cidr: {
                     allow: [],
-                    deny: []
+                    deny: [],
                 },
                 domain: {
                     allow: DefaultAllowedDomains,
-                    deny: []
-                }
+                    deny: [],
+                },
             },
             files: { enable: false },
             mount: { enable: false },
             log: {
                 format: "json",
-                output: "/var/log/bouheki.log.json"
-            }
+                output: "/var/log/bouheki.log.json",
+            },
         };
     }
     allowedAddresses(addresses) {
-        addresses.split(",").map(addr => {
+        addresses.split(",").map((addr) => {
             try {
                 const cidr = ip6addr_default().createCIDR(addr).toString();
                 this.bouhekiConfig.network.cidr.allow.push(cidr);
             }
             catch (_a) {
-                this.bouhekiConfig.network.domain.allow = this.bouhekiConfig.network.domain.allow.concat(addr);
+                this.bouhekiConfig.network.domain.allow =
+                    this.bouhekiConfig.network.domain.allow.concat(addr);
             }
         });
         return this;
@@ -12318,8 +12319,12 @@ const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
         external_child_process_.execFileSync(cmd, args);
         external_child_process_.execSync(`sudo chmod +x ${bouhekiPath}`);
         external_fs_.writeFileSync(external_path_.join(__dirname, "bouheki.service"), systemdUnitFile);
-        cmd = "sudo",
-            args = ["cp", external_path_.join(__dirname, "bouheki.service"), systemdUnitFilePath];
+        (cmd = "sudo"),
+            (args = [
+                "cp",
+                external_path_.join(__dirname, "bouheki.service"),
+                systemdUnitFilePath,
+            ]);
         external_child_process_.execFileSync(cmd, args);
         external_child_process_.execSync("sudo systemctl daemon-reload");
         external_child_process_.execSync("sudo systemctl start bouheki");

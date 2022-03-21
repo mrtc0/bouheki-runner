@@ -5,8 +5,8 @@ import * as child_process from "child_process";
 import * as fs from "fs";
 import { BouhekiConfigBuilder } from "./bouheki";
 
-const bouhekiPath = "/usr/local/bin/bouheki"
-const bouhekiConfigPath = path.join(__dirname, "hardening-github-actions.yaml")
+const bouhekiPath = "/usr/local/bin/bouheki";
+const bouhekiConfigPath = path.join(__dirname, "hardening-github-actions.yaml");
 const systemdUnitFile = `[Unit]
 Description=bouheki
 After=network.target
@@ -20,10 +20,9 @@ Restart=always
 RestartSec=10
 [Install]
 WantedBy=multi-user.target
-`
+`;
 
 const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
-
 
 (async () => {
   try {
@@ -51,10 +50,14 @@ const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
       core.setFailed("target must be either 'container' or 'host'");
     }
 
-    const builder = new BouhekiConfigBuilder().allowedAddresses(config.allowed_endpoints);
+    const builder = new BouhekiConfigBuilder().allowedAddresses(
+      config.allowed_endpoints
+    );
     builder.writeConfig(bouhekiConfigPath);
 
-    const downloadPath: string = await tc.downloadTool("https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz");
+    const downloadPath: string = await tc.downloadTool(
+      "https://github.com/mrtc0/bouheki/releases/download/v0.0.5/bouheki_0.0.5_Linux_x86_64.tar.gz"
+    );
     const extractPath = await tc.extractTar(downloadPath);
 
     let cmd = "sudo",
@@ -63,8 +66,12 @@ const systemdUnitFilePath = "/etc/systemd/system/bouheki.service";
     child_process.execSync(`sudo chmod +x ${bouhekiPath}`);
 
     fs.writeFileSync(path.join(__dirname, "bouheki.service"), systemdUnitFile);
-    cmd = "sudo",
-      args = ["cp", path.join(__dirname, "bouheki.service"), systemdUnitFilePath];
+    (cmd = "sudo"),
+      (args = [
+        "cp",
+        path.join(__dirname, "bouheki.service"),
+        systemdUnitFilePath,
+      ]);
     child_process.execFileSync(cmd, args);
     child_process.execSync("sudo systemctl daemon-reload");
 
